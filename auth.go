@@ -2,25 +2,19 @@ package catchpointsdk
 
 import (
   "net/http"
-  "github.com/kelseyhightower/envconfig"
   "encoding/json"
   "fmt"
-  "log"
+  log "github.com/apex/log"
   "bytes"
   "encoding/base64"
   "github.com/syndtr/goleveldb/leveldb"
   "time"
   "strings"
   "strconv"
+  "github.com/kelseyhightower/envconfig"
 )
 
 const catchpointTokenExpireTime int = 1800
-
-type Authentication struct {
-  ClientID string
-  ClientSecret  string
-  Endpoint  string
-}
 
 type AuthResponse struct {
   AccessToken string `json:"access_token"`
@@ -40,25 +34,28 @@ func Authenticate() string {
 HTTP request to get a new Catchpoint token; base64 encode the result
 */
 func authToCatchpoint() (bearerToken string, accessToken int) {
-  fmt.Printf("calling catchpoint")
-  var a Authentication
-  err := envconfig.Process("catchpointsdk", &a)
-  if err != nil { log.Fatal(err.Error()) }
-  b := []byte(fmt.Sprintf("grant_type=client_credentials&client_id=%s&client_secret=%s", a.ClientID, a.ClientSecret))
-  req, err := http.NewRequest("POST", a.Endpoint, bytes.NewBuffer(b))
+  log.Debugf("Calling catchpoint for a new authtoken")
+  envconfig.Process("catchpointsdk", &c)
+  payload := fmt.Sprintf("grant_type=client_credentials&client_id=%s&client_secret=%s", c.ClientID, c.ClientSecret)
+  uri := fmt.Sprintf("%s/ui/api/token", c.Endpoint)
+  fmt.Println(c.Endpoint)
+  b := []byte(payload)
+  log.Debugf("Sending Catchpoint the following payload: %s", payload)
+  req, err := http.NewRequest("POST", uri, bytes.NewBuffer(b))
   req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
   req.Header.Add("Accept", "*/*")
   client := &http.Client{}
   resp, err := client.Do(req)
   if err != nil { panic(err) }
   defer resp.Body.Close()
+  log.Debugf("Catchpoint returned a status code: %s", resp.Status)
 
   if resp.Status == "200 OK" {
     decoder := json.NewDecoder(resp.Body)
     var ar AuthResponse
     _ = decoder.Decode(&ar)
     bearerToken := base64.StdEncoding.EncodeToString([]byte(ar.AccessToken))
-    //log.Debug("Received Bearer token: %s - [base64 encoded] %s", ar.AccessToken, bearerToken)
+    log.Debugf("Received Bearer token: %s - [base64 encoded] %s", ar.AccessToken, bearerToken)
     return bearerToken, int(time.Now().Unix())
   } else {
     log.Fatal("Invalid response to authentication request received from Catchpoint")
@@ -80,6 +77,7 @@ func checkToken() (token string) {
     token, timeint := authToCatchpoint()
     err = db.Put([]byte("token"), []byte(fmt.Sprintf("%v::%s", timeint, token)), nil)
     if err != nil { panic(err) }
+    return token
   // there is a stored token; let's see if it's less than 1800 seconds old
   } else {
     s := strings.Split(string(data), "::")
@@ -91,6 +89,6 @@ func checkToken() (token string) {
       token, timeint = authToCatchpoint()
       err = db.Put([]byte("token"), []byte(fmt.Sprintf("%v::%s", timeint, token)), nil)
     }
+    return token
   }
-  return token
 }
