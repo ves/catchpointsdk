@@ -14,6 +14,9 @@ type Config struct {
 }
 
 var c Config
+var (
+	division_id   = os.Getenv("CATCHPOINTSDK_DIVISION_ID")
+)
 
 func main() {
 	log.SetHandler(json.New(os.Stderr))
