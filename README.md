@@ -4,6 +4,8 @@ An unofficial SDK and CLI for Catchpoint's Pull API
 
 ## Overview
 
+_This package is incomplete and still actively being worked on; consider it unstable for now._
+
 This package will allow for some basic interactions with Catchpoint's pull API; currently supported functionality includes:
 
 *  Generating an auth token
