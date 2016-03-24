@@ -1,1 +1,1 @@
-An unofficial SDK for Catchpoint's Pull API
+An unofficial SDK and CLI for Catchpoint's Pull API
