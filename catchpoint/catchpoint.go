@@ -211,13 +211,8 @@ func main() {
             if enable_json == "true" {
               fmt.Println(string(catchpointsdk.ListTests()))
             } else {
-              /*
-              if c.Args().First() != "" {
-                catchpointsdk.ListTests(c.Args().First())
-              } else {
-                catchpointsdk.ListTests()
-              }
-              */
+              //temporary
+              fmt.Println(string(catchpointsdk.ListTests()))
             }
           },
         },
